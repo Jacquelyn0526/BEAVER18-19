@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Logic World - New Challenges</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --mario-red: #E52521;
+            --mario-green: #43B047;
+            --mario-blue: #5C94FC;
+            --mario-yellow: #FBD000;
+            --mario-dark: #000000;
+        }
+
+        * { box-sizing: border-box; font-family: 'Nunito', sans-serif; }
+        body { background-color: var(--mario-blue); margin: 0; padding: 0; color: var(--mario-dark); }
+        h1, h2, .pixel-text { font-family: 'Press Start 2P', cursive; line-height: 1.5; text-align: center; }
+
+        #app { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+        .screen { display: none; background: white; padding: 30px; border: 6px solid #000; border-radius: 15px; box-shadow: 8px 8px 0px rgba(0,0,0,0.2); }
+        .active { display: block; }
+
+        #progress-container {
+            position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+            width: 30px; height: 50vh; background: #eee; border: 4px solid #000; border-radius: 20px;
+        }
+        #progress-fill { width: 100%; height: 0%; background: var(--mario-green); transition: 0.3s; border-radius: 15px; }
+
+        .header { display: flex; justify-content: space-between; background: #000; color: #fff; padding: 10px 20px; border-radius: 8px; margin-bottom: 20px; font-size: 12px; }
+        .timer-warn { color: var(--mario-red) !important; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        .q-card { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px dashed #ccc; }
+        .q-img { max-width: 100%; border: 3px solid #000; border-radius: 8px; margin: 15px 0; display: block; margin-left: auto; margin-right: auto; }
+        .options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        
+        input[type="radio"] { display: none; }
+        .opt-btn { background: #f0f0f0; border: 3px solid #000; padding: 10px; text-align: center; cursor: pointer; font-weight: 900; border-radius: 8px; font-size: 20px; }
+        input[type="radio"]:checked + .opt-btn { background: var(--mario-yellow); transform: scale(0.95); }
+
+        .btn { background: var(--mario-green); color: #fff; border: 4px solid #000; padding: 15px; width: 100%; cursor: pointer; font-size: 16px; margin-top: 20px; box-shadow: 4px 4px 0px #000; text-transform: uppercase; }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px #000; }
+        .btn-next { background: var(--mario-blue); }
+
+        .review-item { border: 4px solid var(--mario-red); padding: 15px; margin-bottom: 20px; border-radius: 10px; }
+        .exp-img { max-width: 100%; margin-top: 10px; border: 2px solid #000; display: block; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="screen-start" class="screen active">
+        <h1 style="color: var(--mario-red)">LOGIC WORLD<br>RELOADED</h1>
+        <p style="text-align:center">3 Worlds • 24 New Missions</p>
+        <button class="btn pixel-text" onclick="startQuiz(45)">START GAME</button>
+    </div>
+
+    <div id="screen-quiz" class="screen">
+        <div class="header pixel-text">
+            <div id="world-title">WORLD 1</div>
+            <div id="timer">45:00</div>
+        </div>
+        <div id="questions-area"></div>
+        <button id="nav-btn" class="btn btn-next pixel-text" onclick="nextPart()">NEXT WORLD</button>
+    </div>
+
+    <div id="screen-review" class="screen">
+        <h1 class="pixel-text">RESULTS</h1>
+        <div id="score-text" style="font-size: 24px; text-align: center; font-weight: 900; margin-bottom: 20px;"></div>
+        <div id="review-area"></div>
+        <button id="retry-btn" class="btn pixel-text" onclick="restartWrongOnes()">RETRY WRONG ONES</button>
+    </div>
+
+    <div id="progress-container"><div id="progress-fill"></div></div>
+</div>
+
+<script>
+    const quizData = [
+        // PART A
+        { id: 1, part: 1, title: 'Q1 ROPED TREES', img: 'Q1.png', ans: 'C', exp: 'E1.png' },
+        { id: 2, part: 1, title: 'Q2 ROTATION GAME', img: 'Q2.png', ans: 'B', exp: 'E2.png' },
+        { id: 3, part: 1, title: 'Q3 ROBOTS', img: 'Q3.png', ans: 'C', exp: 'E3.png' },
+        { id: 4, part: 1, title: 'Q4 FLOWERBED', img: 'Q4.png', ans: 'C', exp: 'E4.png' },
+        { id: 5, part: 1, title: 'Q5 BIRD HOUSE', img: 'Q5.png', ans: 'C', exp: 'E5.png' },
+        { id: 6, part: 1, title: 'Q6 RISK', img: 'Q6.png', ans: 'D', exp: 'E6.png' },
+        { id: 7, part: 1, title: 'Q7 PARKING LOT', img: 'Q7.png', ans: 'B', exp: 'E7.png' },
+        { id: 8, part: 1, title: 'Q8 SKATERS', img: 'Q8.png', ans: 'C', exp: 'E8.png' },
+        // PART B
+        { id: 9, part: 2, title: 'Q9 TOY FACTORY', img: 'Q9.png', ans: 'B', exp: 'E9.png' },
+        { id: 10, part: 2, title: 'Q10 STRAWBERRY HUNT', img: 'Q10.png', ans: 'B', exp: 'E10.png' },
+        { id: 11, part: 2, title: 'Q11 FIVE STICKS', img: 'Q11.png', ans: 'D', exp: 'E11.png' },
+        { id: 12, part: 2, title: 'Q12 TOY STORAGE', img: 'Q12.png', ans: 'D', exp: 'E12.png' },
+        { id: 13, part: 2, title: 'Q13 BALLOONS', img: 'Q13.png', ans: 'D', exp: 'E13.png' },
+        { id: 14, part: 2, title: 'Q14 BEAVER JUMP CHALLENGE', img: 'Q14.png', ans: 'A', exp: 'E14.png' },
+        { id: 15, part: 2, title: 'Q15 LEMONADE', img: 'Q15.png', ans: 'C', exp: 'E15.png' },
+        { id: 16, part: 2, title: 'Q16 WHAT TO WEAR?', img: 'Q16.png', ans: 'B', exp: 'E16.png' },
+        // PART C
+        { id: 17, part: 3, title: 'Q17 BEAVER LAKE', img: 'Q17.png', ans: 'C', exp: 'E17.png' },
+        { id: 18, part: 3, title: 'Q18 RING TOSS', img: 'Q18.png', ans: 'C', exp: 'E18.png' },
+        { id: 19, part: 3, title: 'Q19 LONGEST WORD CHAIN', img: 'Q19.png', ans: 'C', exp: 'E19.png' },
+        { id: 20, part: 3, title: 'Q20 DAM CONSTRUCTION', img: 'Q20.png', ans: 'D', exp: 'E20.png' },
+        { id: 21, part: 3, title: 'Q21 CHAMELEON', img: 'Q21.png', ans: 'B', exp: 'E21.png' },
+        { id: 22, part: 3, title: 'Q22 WALLPAPER', img: 'Q22.png', ans: 'A', exp: 'E22.png' },
+        { id: 23, part: 3, title: 'Q23 BRACKET BRACELET', img: 'Q23.png', ans: 'D', exp: 'E23.png' },
+        { id: 24, part: 3, title: 'Q24 BEEHIVE', img: 'Q24.png', ans: 'C', exp: 'E24.png' }
+    ];
+
+    let currentQuestions = [];
+    let userAnswers = {};
+    let currentPart = 1;
+    let timerInterval;
+    let timeLeft;
+    let wrongOnes = [];
+    let isRevisionMode = false;
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    function startQuiz(mins) {
+        isRevisionMode = false;
+        currentQuestions = [...quizData];
+        currentPart = 1;
+        userAnswers = {};
+        timeLeft = mins * 60;
+        setupTimer();
+        renderPart();
+        showScreen('screen-quiz');
+    }
+
+    function setupTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            let m = Math.floor(timeLeft/60);
+            let s = timeLeft % 60;
+            const display = document.getElementById('timer');
+            display.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+            if(timeLeft < 60) display.classList.add('timer-warn');
+            else display.classList.remove('timer-warn');
+            if(timeLeft <= 0) { clearInterval(timerInterval); finishQuiz(); }
+        }, 1000);
+    }
+
+    function renderPart() {
+        const area = document.getElementById('questions-area');
+        const btn = document.getElementById('nav-btn');
+        area.innerHTML = '';
+        
+        const partQs = currentQuestions.filter(q => q.part === currentPart);
+        document.getElementById('world-title').innerText = isRevisionMode ? "REVISION" : `WORLD ${currentPart}`;
+
+        partQs.forEach(q => {
+            const div = document.createElement('div');
+            div.className = 'q-card';
+            div.innerHTML = `
+                <p class="pixel-text" style="font-size:10px">${q.title}</p>
+                <img src="${q.img}" class="q-img" onerror="this.alt='Image ${q.img} missing'">
+                <div class="options">
+                    ${['A','B','C','D'].map(o => `
+                        <label>
+                            <input type="radio" name="q${q.id}" value="${o}" ${userAnswers[q.id] === o ? 'checked' : ''} 
+                                   onclick="userAnswers[${q.id}]='${o}'; updateProgress();">
+                            <div class="opt-btn">${o}</div>
+                        </label>
+                    `).join('')}
+                </div>
+            `;
+            area.appendChild(div);
+        });
+
+        btn.innerText = (isRevisionMode || currentPart === 3) ? "SUBMIT ANSWERS" : "NEXT WORLD";
+        updateProgress();
+    }
+
+    function nextPart() {
+        if(isRevisionMode || currentPart === 3) {
+            finishQuiz();
+        } else {
+            currentPart++;
+            renderPart();
+            window.scrollTo(0,0);
+        }
+    }
+
+    function updateProgress() {
+        const total = currentQuestions.length;
+        const done = Object.keys(userAnswers).length;
+        document.getElementById('progress-fill').style.height = `${(done/total)*100}%`;
+    }
+
+    function finishQuiz() {
+        clearInterval(timerInterval);
+        wrongOnes = [];
+        let score = 0;
+        const reviewArea = document.getElementById('review-area');
+        reviewArea.innerHTML = '';
+
+        currentQuestions.forEach(q => {
+            if(userAnswers[q.id] === q.ans) {
+                score++;
+            } else {
+                wrongOnes.push(q);
+                const item = document.createElement('div');
+                item.className = 'review-item';
+                item.innerHTML = `
+                    <p class="pixel-text" style="font-size:10px; color:var(--mario-red)">FAILED: ${q.title}</p>
+                    <p>Your answer: ${userAnswers[q.id] || 'None'} | <b>Correct Answer: ${q.ans}</b></p>
+                    <img src="${q.exp}" class="exp-img" onerror="this.alt='Explanation ${q.exp} missing'">
+                `;
+                reviewArea.appendChild(item);
+            }
+        });
+
+        document.getElementById('score-text').innerText = `SCORE: ${score} / ${currentQuestions.length}`;
+        const retryBtn = document.getElementById('retry-btn');
+        
+        if(wrongOnes.length === 0) {
+            reviewArea.innerHTML = "<h2 style='color:var(--mario-green); text-align:center;'>PERFECT!<br>COURSE CLEAR!</h2>";
+            retryBtn.style.display = 'none';
+        } else {
+            retryBtn.style.display = 'block';
+            retryBtn.innerText = `RETRY ${wrongOnes.length} MISTAKES`;
+        }
+        showScreen('screen-review');
+    }
+
+    function restartWrongOnes() {
+        isRevisionMode = true;
+        // Scramble the incorrect questions
+        currentQuestions = [...wrongOnes].sort(() => Math.random() - 0.5);
+        currentQuestions.forEach(q => q.part = 1); 
+        
+        currentPart = 1;
+        userAnswers = {};
+        timeLeft = 30 * 60; // 30 mins for revision
+        setupTimer();
+        renderPart();
+        showScreen('screen-quiz');
+    }
+</script>
+
+</body>
+</html>
